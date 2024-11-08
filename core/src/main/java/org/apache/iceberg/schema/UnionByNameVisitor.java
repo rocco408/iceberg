@@ -24,6 +24,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Type;
+import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 
 /**
@@ -180,14 +181,7 @@ public class UnionByNameVisitor extends SchemaWithPartnerVisitor<Integer, Boolea
   }
 
   private boolean compatibleType(Type newType, Type existingType) {
-    switch (existingType.typeId()) {
-      case LONG:
-        return newType.typeId() == Type.TypeID.INTEGER || newType.typeId() == Type.TypeID.LONG;
-      case DOUBLE:
-        return newType.typeId() == Type.TypeID.FLOAT || newType.typeId() == Type.TypeID.DOUBLE;
-      default:
-        return existingType.isPrimitiveType() && newType.typeId() == existingType.typeId();
-    }
+    return existingType.isPrimitiveType() && TypeUtil.isPromotionAllowed(newType, existingType.asPrimitiveType());
   }
 
   private static class PartnerIdByNameAccessors implements PartnerAccessors<Integer> {
