@@ -163,7 +163,7 @@ public class UnionByNameVisitor extends SchemaWithPartnerVisitor<Integer, Boolea
     String fullName = partnerSchema.findColumnName(existingField.fieldId());
 
     boolean needsOptionalUpdate = field.isOptional() && existingField.isRequired();
-    boolean needsTypeUpdate = needsTypeUpdate(field.type(), existingField.type());
+    boolean needsTypeUpdate = !compatibleType(field.type(), existingField.type());
     boolean needsDocUpdate = field.doc() != null && !field.doc().equals(existingField.doc());
 
     if (needsOptionalUpdate) {
@@ -179,20 +179,15 @@ public class UnionByNameVisitor extends SchemaWithPartnerVisitor<Integer, Boolea
     }
   }
 
-  private boolean needsTypeUpdate(Type newType, Type existingType) {
-    if (newType.isPrimitiveType()) {
-      if (newType.equals(existingType)) {
-        return false;
-      }
-      if (existingType.typeId() == Type.TypeID.LONG && newType.typeId() == Type.TypeID.INTEGER) {
-        return false;
-      }
-      if (existingType.typeId() == Type.TypeID.DOUBLE && newType.typeId() == Type.TypeID.FLOAT) {
-        return false;
-      }
-      return true;
+  private boolean compatibleType(Type newType, Type existingType) {
+    switch (existingType.typeId()) {
+      case LONG:
+        return newType.typeId() == Type.TypeID.INTEGER || newType.typeId() == Type.TypeID.LONG;
+      case DOUBLE:
+        return newType.typeId() == Type.TypeID.FLOAT || newType.typeId() == Type.TypeID.DOUBLE;
+      default:
+        return existingType.isPrimitiveType() && newType.typeId() == existingType.typeId();
     }
-    return false;
   }
 
   private static class PartnerIdByNameAccessors implements PartnerAccessors<Integer> {
